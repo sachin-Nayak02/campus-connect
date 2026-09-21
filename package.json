@@ -1,0 +1,14 @@
+{
+  "name": "campusconnect",
+  "version": "1.0.0",
+  "description": "CampusConnect - A College-Only Social Media Platform",
+  "scripts": {
+    "server": "npm --prefix server run dev",
+    "client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "install-client": "npm --prefix client install"
+  },
+  "keywords": ["campusconnect", "social-media", "college"],
+  "author": "Sadasiba Nayak",
+  "license": "ISC"
+}

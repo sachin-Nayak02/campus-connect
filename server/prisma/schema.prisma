@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  rollNumber       String            @unique
+  fullName         String
+  email            String            @unique
+  passwordHash     String
+  phone            String?
+  dob              String?
+  branch           String
+  year             String
+  gender           String?
+  profilePhoto     String?
+  coverPhoto       String?
+  bio              String?
+  role             String            @default("student") // student | admin
+  status           String            @default("active")  // active | suspended | deleted
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  posts            Post[]
+  likes            Like[]
+  comments         Comment[]
+  sentRequests     Friendship[]      @relation("SentRequests")
+  receivedRequests Friendship[]      @relation("ReceivedRequests")
+  groupMemberships GroupMember[]
+  messages         Message[]
+  notifications    Notification[]    @relation("UserNotifications")
+  actedNotifications Notification[]  @relation("ActorNotifications")
+  reports          Report[]
+}
+
+model AllowedRollNumber {
+  id         String   @id @default(uuid())
+  rollNumber String   @unique
+  fullName   String?
+  branch     String?
+  year       String?
+  isUsed     Boolean  @default(false)
+  addedBy    String?
+  createdAt  DateTime @default(now())
+}
+
+model Post {
+  id        String    @id @default(uuid())
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  isDeleted Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  media     Media[]
+  likes     Like[]
+  comments  Comment[]
+  reports   Report[]
+}
+
+model Media {
+  id              String   @id @default(uuid())
+  postId          String?
+  post            Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  messageId       String?
+  message         Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  url             String
+  type            String   // image | video
+  durationSeconds Int?     // max 30 for post videos
+  createdAt       DateTime @default(now())
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  postId    String
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+  content   String
+  createdAt DateTime  @default(now())
+}
+
+model Friendship {
+  id          String   @id @default(uuid())
+  requesterId String
+  requester   User     @relation("SentRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    User     @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status      String   @default("pending") // pending | accepted | rejected | blocked
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([requesterId, receiverId])
+}
+
+model Chat {
+  id          String        @id @default(uuid())
+  type        String        @default("direct") // direct | group
+  groupName   String?
+  groupAvatar String?
+  createdById String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  members     GroupMember[]
+  messages    Message[]
+}
+
+model GroupMember {
+  id       String   @id @default(uuid())
+  chatId   String
+  chat     Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("member") // member | admin
+  joinedAt DateTime @default(now())
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content   String?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  media     Media[]
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User     @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: Cascade)
+  type      String   // friend_request | request_accepted | post_like | post_comment | chat_message
+  entityId  String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model OtpVerification {
+  id        String   @id @default(uuid())
+  email     String
+  otpCode   String
+  purpose   String   // signup | password_reset
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id         String   @id @default(uuid())
+  reporterId String
+  reporter   User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reason     String
+  status     String   @default("pending") // pending | resolved | dismissed
+  createdAt  DateTime @default(now())
+}
