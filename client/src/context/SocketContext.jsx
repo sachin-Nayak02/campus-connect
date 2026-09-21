@@ -18,13 +18,20 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? window.location.origin : 'http://localhost:5000');
     const newSocket = io(socketUrl, {
-      auth: { token }
+      auth: { token },
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 3
     });
 
     newSocket.on('connect', () => {
       console.log('[Socket] Connected to server as', user.fullName);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      // In serverless environments where persistent sockets are disabled, fail gracefully
+      console.warn('[Socket] Real-time connection notice:', err.message);
     });
 
     newSocket.on('presence_update', (data) => {
