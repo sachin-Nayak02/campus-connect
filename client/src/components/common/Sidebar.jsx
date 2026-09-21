@@ -6,7 +6,8 @@ import {
   Home,
   Users,
   MessageSquare,
-  ShieldCheck
+  ShieldCheck,
+  Award
 } from 'lucide-react';
 
 export default function Sidebar() {

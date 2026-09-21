@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getMediaUrl } from '../../utils/media';
 
 export default function Avatar({ src, name, size = 'md', isOnline = false, className = '' }) {
+  const [imgError, setImgError] = useState(false);
   const sizeClasses = {
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
@@ -29,10 +30,11 @@ export default function Avatar({ src, name, size = 'md', isOnline = false, class
 
   return (
     <div className={`relative inline-block flex-shrink-0 ${className}`}>
-      {fullUrl ? (
+      {fullUrl && !imgError ? (
         <img
           src={fullUrl}
           alt={name || 'Avatar'}
+          onError={() => setImgError(true)}
           className={`${sizeClasses[size]} rounded-full object-cover border border-slate-200 shadow-sm`}
         />
       ) : (

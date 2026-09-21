@@ -2,10 +2,25 @@ const SERVER_URL = import.meta.env.VITE_SOCKET_URL || (typeof window !== 'undefi
 
 export function getMediaUrl(path) {
   if (!path) return null;
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
+
+  // Strip localhost:5000 if stored in DB during local testing
+  let cleanPath = path;
+  if (typeof cleanPath === 'string' && cleanPath.includes('localhost:5000')) {
+    cleanPath = cleanPath.replace(/^https?:\/\/localhost:5000/, '');
   }
-  return `${SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+
+  // Handle absolute URLs
+  if (cleanPath.startsWith('https://')) {
+    return cleanPath;
+  }
+  if (cleanPath.startsWith('http://')) {
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      return cleanPath.replace('http://', 'https://');
+    }
+    return cleanPath;
+  }
+
+  return `${SERVER_URL}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
 }
 
 export function getVideoDuration(file) {
